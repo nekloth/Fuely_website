@@ -30,3 +30,8 @@ function testeNombreReel ( leNombre ) {
 	}
 	
 }
+
+
+/* Eléments aussi basiques que futiles pour limiter l'accès... c'est nul, je sais... */
+
+var authkey="!q4h@zK@s;cOj*8#7wxE9lyS=jGfq+wGb_+8DSB#yTiGpJjj";

@@ -33,7 +33,6 @@
 	}
 
 
-
-
+	$authkey = "!q4h@zK@s;cOj*8#7wxE9lyS=jGfq+wGb_+8DSB#yTiGpJjj";
 
 ?>

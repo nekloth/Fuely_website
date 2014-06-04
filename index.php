@@ -20,6 +20,7 @@
 		http://ladensia.com/circliful/index.html
 		http://getbootstrap.com/css/
 		http://bootswatch.com/flatly/
+		http://codeseven.github.io/toastr/demo.html
 	-->
 
   </head>
@@ -116,9 +117,9 @@
 							<form class="form-inline" role="form">
 								<div class="form-group col-md-4">
 									<label class="control-label">Date de l'enregistrement</label>
-									<div class="input-group">
+									<div class="input-group" id="groupe_date_plein">
 										<span class="input-group-addon"><span class="fa fa-calendar-o"></span></span>
-										<input type="text" class="form-control datepicker">
+										<input type="text" class="form-control datepicker" id="date_plein">
 									</div>
 								</div>
 								<div class="form-group col-md-4">
@@ -311,58 +312,74 @@
 
 		//On instancie l'objet qui dessine le graphe
 		theGraphe = graph = Morris.Line({
-		  element: 'myfirstchart',
-		  data: JSON.parse(donneesGraphe()),
-		  xkey: 'date',
-		  ykeys: ['value'],
-		  labels: ['Quantité'],
-		  postUnits: ' litres',
-		  smooth: false
+		  element: 'myfirstchart' , data: JSON.parse(donneesGraphe()) , xkey: 'date' , ykeys: ['value'] , labels: ['Quantité'] , postUnits: ' litres' , smooth: false
 		});
 				
 
 		
 		
 		$('#enregistrer-nouvea-plein').on('click', function ( event ) {
+			$(this).prop('disabled', true);
 			event.preventDefault();
+			
 			debug("[NOUVEAU PLEIN] On vient de cliquer sur le bouton enregistrer");
+			
 			var toutEstOk = true;
 			
-			if ( testeNombreReel($('#prix_achat').val()) ) {
-				$('#groupe_prix_achat').removeClass('has-error');
-			} else {
-				$('#groupe_prix_achat').addClass('has-error');
-				toutEstOk = false;
-			}
+			if ( $('#date_plein').val() != "" ) {$('#groupe_date_plein').removeClass('has-error');} else {$('#groupe_date_plein').addClass('has-error');toutEstOk = false;}
+			if ( testeNombreReel($('#prix_achat').val()) ) {$('#groupe_prix_achat').removeClass('has-error');} else {$('#groupe_prix_achat').addClass('has-error');toutEstOk = false;}
+			if ( testeNombreReel($('#quantite_avant').val()) ) {$('#groupe_quantite_avant').removeClass('has-error');} else {$('#groupe_quantite_avant').addClass('has-error');toutEstOk = false;}
+			if ( testeNombreReel($('#quantite_achetee').val()) ) {$('#groupe_quantite_achetee').removeClass('has-error');} else {$('#groupe_quantite_achetee').addClass('has-error');toutEstOk = false;}
+					
 
-			if ( testeNombreReel($('#quantite_avant').val()) ) {
-				$('#groupe_quantite_avant').removeClass('has-error');
-			} else {
-				$('#groupe_quantite_avant').addClass('has-error');
-				toutEstOk = false;
-			}
-
-			if ( testeNombreReel($('#quantite_achetee').val()) ) {
-				$('#groupe_quantite_achetee').removeClass('has-error');
-			} else {
-				$('#groupe_quantite_achetee').addClass('has-error');
-				toutEstOk = false;
-			}
+			if (!toutEstOk) {toastr.warning('Pense à donner les informations qui vont bien, sinon, je ne peux rien faire...','Tu n\'aurais pas oublié quelque chose ?');
+			} else { 
 			
-			
-
-			if (!toutEstOk) {
-				toastr.warning('Pense à donner les informations qui vont bien, sinon, je ne peux rien faire...','Tu n\'aurais pas oublié quelque chose ?');
-			}
-			else {
+				/* Bon, maintenant que tout semble OK, on va pouvoir appeler l'API */
 				debug("[NOUVEAU PLEIN] Tous les champs sont renseignés.");
-			}
-			
+				var requetePLEIN = $.ajax({
+					type: "POST",
+					url: "plein.php",
+					data: {
+						date: $('#date_plein').val(),
+						quantite_avant: $('#quantite_avant').val(),
+						quantite_achetee: $('#quantite_achetee').val(),
+						prix_achat: $('#prix_achat').val(),
+						commentaires:$('#commentaires').val()
+						}
+				});
+				
+				requetePLEIN.done(function( msg ) {
+					var retourJSON = JSON.parse( msg );
+					if (retourJSON.resultat == "ERREUR") {
+						toastr.error( 'Quelque chose ne s\'est pas bien passé. <br/><font size="-2">' + msg + '</font>','Mince, c\'est gênant...');			
+					} else {
+					
+						/*TOUT S'EST BIEN PASSE */
+						$('#quantite_avant').val("");
+						$('#quantite_achetee').val("");
+						$('#prix_achat').val("");
+						$('#quantite_totale').val("");
+						$('#cout_total').val("");
+						$('#commentaires').val("");
+						afficheLaJauge();
+						theGraphe.setData(JSON.parse(donneesGraphe()));
+						toastr.success( 'Et bien voilà, c\'est enregistré ! Merci.', 'C\'est enregistré');			
+					}
+				});
+
+				requetePLEIN.fail(function( msg ) {
+					toastr.error( 'Quelque chose ne s\'est pas bien passé. Désolé (' + msg + ')','Mince, c\'est gênant...');			
+				});
+			} //End of if toutEstOK
+			$(this).prop('disabled', false);
+		
 		});
 		
 		//On a cliqué sur "Enregistrer" une nouvelle mesure
 		$('#poste_nouvelle_mesure').on('click',function( event ) {
 			event.preventDefault();
+			$(this).prop('disabled', true);
 			debug('[NOUVELLE MESURE] On demande un enregistrement');
 			//On vérifie que tout est OK
 			if ( $('#nouvelle_mesure_quantite').val()=="") { //La quantite n'est pas renseignée
@@ -374,10 +391,8 @@
 				debug('[NOUVELLE MESURE] Allez, on va pouvoir enregistrer');
 				$('#groupe_quantite').removeClass('has-error');
 				
-				
 				var request = $.ajax({
-					type: "POST",
-					url: "mesure.php",
+					type: "POST",url: "mesure.php",
 					data: { date: $('#nouvelle_mesure_date').val(), quantite: $('#nouvelle_mesure_quantite').val() }
 				});
 				
@@ -386,9 +401,7 @@
 					if (retourJSON.resultat == "ERREUR") {
 						toastr.error( 'Quelque chose ne s\'est pas bien passé. <br/><font size="-2">' + msg + '</font>','Mince, c\'est gênant...');			
 					} else {
-						// Tout s'est bien passé, on peut continuer.
 						$('#nouvelle_mesure_quantite').val("");
-						//On rafraichit le CERCLE et le GRAPHE
 						afficheLaJauge();
 						theGraphe.setData(JSON.parse(donneesGraphe()));
 						toastr.success( 'Et bien voilà, c\'est enregistré ! Merci.', 'C\'est enregistré');			
@@ -397,23 +410,26 @@
 				request.fail(function( msg ) {
 					toastr.error( 'Quelque chose ne s\'est pas bien passé. Désolé (' + msg + ')','Mince, c\'est gênant...');			
 				});
-				
-				
-				
-				
 			}
-			
+			$(this).prop('disabled', false);
 		});
+		
+		
+		$( window ).resize(function() {
+			theGraphe.setData(JSON.parse(donneesGraphe()));
+		});
+		
+		/*Se prémunir des " */
+		$('input,textarea')
+			.on('keypress', function ( e ) {if ( e.keyCode == 34 ) e.preventDefault();})
+			.on('blur', function ( e ) {$(this).val($(this).val().replace('"', ''));})
+		;
 		
 		//Ajax tests après click sur le bouton
 		$('#charger').on('click',function () {
 			// Pour mes tests
 			
-			
 		});
-
-		
-
 	});
 	</script>
   </body>
