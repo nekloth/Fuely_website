@@ -32,6 +32,14 @@
 		return $heure . ":" . $minute . ":" . $seconde;
 	}
 
+	function afficheReel( $nombre ) {
+		return number_format(round($nombre,2), 2, ',', ' ');
+	}
+	
+	function afficheEntier( $nombre ) {
+		return number_format(round($nombre,0), 0, ',', ' ');
+	}
+	
 
 	$authkey = "!q4h@zK@s;cOj*8#7wxE9lyS=jGfq+wGb_+8DSB#yTiGpJjj";
 

@@ -200,6 +200,9 @@
 			<div class="panel-body" >
 				<button id="charger" class="btn btn-primary">Tester</button>
 				<span id="sandbox"></span>
+				
+				<?php include "stats.php" ?>
+				
 			</div>
 			</div>
 		</div>
