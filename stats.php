@@ -1,4 +1,4 @@
-﻿<h1>Stats</h1>
+<h1>Stats</h1>
 
 <?php
 	include_once 'vars.php';
@@ -95,7 +95,7 @@
 					$total_prix = 0;
 					while ($row = $results->fetchArray(SQLITE3_ASSOC)) {
 						//var_dump($row);
-						$num_item += 1;
+						$num_item++;
 						$total_quantite += $row['quantite_achetee'];
 						$total_prix += $row['prix_total'];
 						echo "<tr><td>" . $row['annee'] . "</td><td>" . afficheReel($row['prix_total']) . " €</td><td>" . afficheEntier($row['quantite_achetee']) . " litres</td></tr>";
@@ -105,8 +105,8 @@
 			</div>
 			<div class="col-md-6">
 				<table class="table">
-					<tr><td><strong>Prix moyen par plein</strong></td><td><?php echo afficheReel($total_prix/$num_item); ?> €</td></tr>
-					<tr><td><strong>Quantité moyenne par plein</strong></td><td><?php echo afficheReel($total_quantite/$num_item); ?> litres</td></tr>
+					<tr><td><strong>Prix moyen par plein</strong></td><td><?php if ($num_item<>0) {echo afficheReel($total_prix/$num_item);}else{echo "N/A";} ?> €</td></tr>
+					<tr><td><strong>Quantité moyenne par plein</strong></td><td><?php if ($num_item<>0) {echo afficheReel($total_quantite/$num_item);}else{echo "N/A";} ?> litres</td></tr>
 				</table>
 			</div>
 		</div>
