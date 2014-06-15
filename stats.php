@@ -16,15 +16,6 @@
 				<?php
 				
 				
-				/*
-				$d1 = new DateTime('$row['annee']."-".$row['mois']."-".$row['jour']." ".$row['heures'].":".$row['minutes'].":".$row['secondes']'); 
-				$d2 = new DateTime('2009-06-10 20:30:00'); 
-				$diff = $d1->diff($d2); 
-				$nb_jours = $diff->d;
-				echo $nb_jours . "<br/><br/><br/><br/>";
-				*/
-				
-				
 				$results = @$db->query($REQ_conso_moyenne_annuelle);
 				$num_item = 0;
 				$cumul_annuel = 0;
@@ -34,23 +25,23 @@
 				$nombre_jours = 0;
 				$annee_en_cours = 0;
 				$position = 0;
+				$compteur = 0; 
+				
+				
+				
 				
 
 				while ($row = $results->fetchArray(SQLITE3_ASSOC)) {
 					$position++;
 					
-					echo "..$position..(". $row['date'] .") : de $precedente_mesure à " . $row['quantite'] . "";
+					// echo "..$position..(". $row['date'] .") : de $precedente_mesure à " . $row['quantite'] . "";
 					
 					if ($position == 1) {
 						$num_item++;
 						$annee_en_cours = $row['annee'];
 						$precedente_mesure = $row['quantite'];
 						$precedente_date   =  new DateTime($row['annee']."-".$row['mois']."-".$row['jour']." ".$row['heures'].":".$row['minutes'].":".$row['secondes']);
-
-						echo " - INIT <br/>";
 					} else {
-					
-
 						if ($precedente_mesure > $row['quantite']) { //On prendre en compte, il ne s'agit pas d'un plein
 							$aCompter = $precedente_mesure - $row['quantite'];
 							$num_item++;
@@ -60,36 +51,71 @@
 							$nombre_jours_temp = $interval->days;
 							if ($interval->h>12) $nombre_jours_temp++;
 							$nombre_jours += $nombre_jours_temp;
-							echo " - Oui : ($aCompter litres et $nombre_jours_temp jours)<br/>";
+							//echo " - Oui : ($aCompter litres et $nombre_jours_temp jours)<br/>";
 							$precedente_mesure = $row['quantite'];
 							$precedente_date   =  $date_consideree;
-
 						} else {
 							$precedente_mesure = $row['quantite'];
 							$precedente_date   =  new DateTime($row['annee']."-".$row['mois']."-".$row['jour']." ".$row['heures'].":".$row['minutes'].":".$row['secondes']);
-							echo " - Non <br/>";
+							//echo " - Non <br/>";
 						}
 	
 						if ($row['annee'] != $annee_en_cours) {
-							echo "     -> Bilan annee $annee_en_cours : $num_item mesures <br/> Jours : $nombre_jours<br/>Quantite = $cumul_annuel<br/>Conso annuelle: ". round(($cumul_annuel/$nombre_jours)*365.25,2) ."<br/><br/>";
+							$conso = ($cumul_annuel/$nombre_jours)*365.25;
+							//echo "<tr><td>$annee_en_cours</td><td>". afficheEntier($conso) ." litres/an</td><td>". afficheEntier($cumul_annuel) ." litres</td></tr>";
+							$consommation[$compteur]['annee'] = $annee_en_cours;
+							$consommation[$compteur]['conso'] = $conso;
+							$consommation[$compteur]['quantite'] = $cumul_annuel;
+							$compteur++;
 							$annee_en_cours = $row['annee'];
 							$num_item = 0;
 							$cumul_annuel = 0;
 							$nombre_jours = 0;
 							
 						} 
-
-
 					}
-
-					
-					//	var_dump($row);
-					
-					
-				}
-							echo "     -> Bilan annee $annee_en_cours : $num_item mesures <br/> Jours : $nombre_jours<br/>Quantite = $cumul_annuel<br/>Conso annuelle: ". round(($cumul_annuel/$nombre_jours)*365.25,2) ."<br/><br/>";
-				?>
 				
+					//	var_dump($row);
+				}
+							//echo "     -> Bilan annee $annee_en_cours : $num_item mesures <br/> Jours : $nombre_jours<br/>Quantite = $cumul_annuel<br/>Conso annuelle: ". round(($cumul_annuel/$nombre_jours)*365.25,2) ."<br/><br/>";
+							$conso = ($cumul_annuel/$nombre_jours)*365.25;
+							$consommation[$compteur]['annee'] = $annee_en_cours;
+							$consommation[$compteur]['conso'] = $conso;
+							$consommation[$compteur]['quantite'] = $cumul_annuel;
+							//echo "<tr><td>$annee_en_cours</td><td>". afficheEntier($conso) ." litres/an</td><td>". afficheEntier($cumul_annuel) ." litres</td></tr>";
+							
+							//print_r($consommation);
+
+
+						//Maintenant, on peut afficher le tableau
+				?>
+					<table class='table table-striped table-bordered table-hover table-condensed'>
+						<tr>
+							<th>Annee</th>
+							<th>Consommation</th>
+							<th>Quantité consommée</th>
+						</tr>
+					<?php
+						$moyenne_de_moyenne = 0;
+						for($i = 0 ; $i < $compteur ; $i++)
+						{
+							$moyenne_de_moyenne += $consommation[$i]['conso'];
+						}
+						
+						$moyenne_de_moyenne /= $compteur;
+						
+						echo $moyenne_de_moyenne;
+						
+						for($i = 0 ; $i <= $compteur ; $i++)
+						{
+							echo "<tr";
+							if (  $consommation[$i]['conso']  > 1901 ) echo " class='danger' ";
+							echo "><td>";
+							echo $consommation[$i]['annee']."</td><td>". afficheEntier($consommation[$i]['conso']) ." litres/an</td><td>". afficheEntier($consommation[$i]['quantite']) ." litres</td></tr>";
+						}
+					?>
+					</table>
+
 				
 			</div>
 			<div class="col-md-6">
